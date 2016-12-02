@@ -1,5 +1,7 @@
 # Riak ACL
 
+[![Build Status][travis-img]][travis]
+
 Access control list (ACL) on top of Riak KV
 
 
@@ -86,3 +88,5 @@ gb_sets:to_list(
 The source code is provided under the terms of [the MIT license][license].
 
 [license]:http://www.opensource.org/licenses/MIT
+[travis]:https://travis-ci.org/manifest/riak-acl?branch=master
+[travis-img]:https://secure.travis-ci.org/manifest/riak-acl.png
