@@ -71,6 +71,12 @@ riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"note">>, riak
 %% {ok,#{read => true,write => false}}
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"note">>, riakacl_rwaccess, After).
 %% error
+
+%% Hint: you can always retrieve subject's or object's list of verified groups.
+gb_sets:to_list(
+  riakacl_entry:verified_groupset_dt(
+    riakacl_entry:get(Pid, SubjectBucket, <<"Jeck">>),
+    riakacl:unix_time_us())).
 ```
 
 
