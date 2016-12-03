@@ -102,12 +102,13 @@ find(Pid, Bucket, Key, Opts) ->
 	end.
 
 -spec put(pid(), bucket_and_type(), binary(), entry()) -> ok.
-put(Pid, Bucket, Key, S) ->
-	case catch riakc_pb_socket:update_type(Pid, Bucket, Key, riakc_map:to_op(S), [{pw, quorum}]) of
-		ok               -> ok;
-		{error, Reason}  -> exit(Reason);
-		{'EXIT', Reason} -> exit(Reason);
-		Else             -> exit({bad_return_value, Else})
+put(Pid, Bucket, Key, E) ->
+	case catch riakc_pb_socket:update_type(Pid, Bucket, Key, riakc_map:to_op(E), [{pw, quorum}]) of
+		ok                  -> ok;
+		{error, unmodified} -> ok;
+		{error, Reason}     -> exit(Reason);
+		{'EXIT', Reason}    -> exit(Reason);
+		Else                -> exit({bad_return_value, Else})
 	end.
 
 %% =============================================================================
