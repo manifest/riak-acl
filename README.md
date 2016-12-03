@@ -8,7 +8,7 @@ Access control list (ACL) on top of Riak KV
 
 ### How To Use
 
-To build and start playing with the application, execute following shell commands:
+To build and start playing with the library, execute following shell commands:
 
 ```bash
 ## Building the development image and running the container with Riak KV within it.
@@ -34,7 +34,7 @@ riakacl:update_object_acl(
   [ {<<"a">>, riakacl_rwaccess:new_dt(#{read => true})},
     {<<"b">>, riakacl_rwaccess:new_dt(#{write => true})} ]).
 
-%% Let "John" be a member of the "a" group. So that, he have access with read permissions.
+%% Let "John" be a member of the "a" group. So that he have access with read permissions.
 riakacl:update_subject_groups(
   Pid, SubjectBucket, <<"John">>,
   [ {<<"a">>, riakacl_group:new_dt()} ]),
@@ -56,7 +56,7 @@ riakacl:authorize(Pid, SubjectBucket, <<"Mery">>, ObjectBucket, <<"book">>, riak
 
 %% We can grant membership of group for limited time.
 %% Note that unix time in microseconds is assumed to use with the library.
-Time = 5, Before = 0, After = 10,
+Time = riakacl:unix_time_us(), Before = Time -1, After = Time +1,
 riakacl:update_subject_groups(
   Pid, SubjectBucket, <<"Mark">>,
   [ {<<"a">>, riakacl_group:new_dt(#{exp => Time})} ]),

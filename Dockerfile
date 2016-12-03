@@ -28,10 +28,10 @@ RUN set -xe \
 		jq
 
 ## -----------------------------------------------------------------------------
-## Installing Riak KV, Riak S2, Stanchion
+## Installing Riak KV
 ## -----------------------------------------------------------------------------
 RUN set -xe \
-	&& add-apt-repository -s -y "deb https://packagecloud.io/basho/riak/ubuntu/ $(lsb_release -sc) main" \
+	&& add-apt-repository -s -y "deb https://packagecloud.io/basho/riak/ubuntu $(lsb_release -sc) main" \
 	&& curl -fSL https://packagecloud.io/gpg.key 2>&1 | apt-key add -- \
 	&& apt-get update \
 	&& apt-get -y --no-install-recommends install \
