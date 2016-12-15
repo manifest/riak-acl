@@ -41,12 +41,12 @@ riakacl:update_subject_groups(
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"book">>, riakacl_rwaccess).
 %% {ok,#{read => true,write => false}}
 
-%% Sinse "Jeck" is a member of both groups, he have access with read and write permissions.
+%% Sinse "Jack" is a member of both groups, he have access with read and write permissions.
 riakacl:update_subject_groups(
-  Pid, SubjectBucket, <<"Jeck">>,
+  Pid, SubjectBucket, <<"Jack">>,
   [ {<<"a">>, riakacl_group:new_dt()},
     {<<"b">>, riakacl_group:new_dt()} ]),
-riakacl:authorize(Pid, SubjectBucket, <<"Jeck">>, ObjectBucket, <<"book">>, riakacl_rwaccess).
+riakacl:authorize(Pid, SubjectBucket, <<"Jack">>, ObjectBucket, <<"book">>, riakacl_rwaccess).
 %% {ok,#{read => true,write => true}}
 
 %% Mery isn't a member of any group. Access to book is forbidden for her.
@@ -77,7 +77,7 @@ riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"note">>, riak
 %% Hint: you can always retrieve subject's or object's list of verified groups.
 gb_sets:to_list(
   riakacl_entry:verified_groupset_dt(
-    riakacl_entry:get(Pid, SubjectBucket, <<"Jeck">>),
+    riakacl_entry:get(Pid, SubjectBucket, <<"Jack">>),
     riakacl:unix_time_us())).
 ```
 
