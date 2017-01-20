@@ -29,20 +29,20 @@ ObjectBucket = {<<"riakacl_object_t">>, <<"riakacl-object">>},
 
 %% Suppose we have a book and want to restrict access.
 %% Let's allow the group "a" to read it and the group "b" to write to it.
-riakacl:update_object_acl(
+riakacl:put_object_acl(
   Pid, ObjectBucket, <<"book">>,
   [ {<<"a">>, riakacl_rwaccess:new_dt(#{read => true})},
     {<<"b">>, riakacl_rwaccess:new_dt(#{write => true})} ]).
 
 %% Let "John" be a member of the "a" group. So that he have access with read permissions.
-riakacl:update_subject_groups(
+riakacl:put_subject_groups(
   Pid, SubjectBucket, <<"John">>,
   [ {<<"a">>, riakacl_group:new_dt()} ]),
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"book">>, riakacl_rwaccess).
 %% {ok,#{read => true,write => false}}
 
 %% Sinse "Jack" is a member of both groups, he have access with read and write permissions.
-riakacl:update_subject_groups(
+riakacl:put_subject_groups(
   Pid, SubjectBucket, <<"Jack">>,
   [ {<<"a">>, riakacl_group:new_dt()},
     {<<"b">>, riakacl_group:new_dt()} ]),
@@ -50,14 +50,14 @@ riakacl:authorize(Pid, SubjectBucket, <<"Jack">>, ObjectBucket, <<"book">>, riak
 %% {ok,#{read => true,write => true}}
 
 %% Mery isn't a member of any group. Access to book is forbidden for her.
-riakacl:update_subject_groups(Pid, SubjectBucket, <<"Mery">>, []),
+riakacl:put_subject_groups(Pid, SubjectBucket, <<"Mery">>, []),
 riakacl:authorize(Pid, SubjectBucket, <<"Mery">>, ObjectBucket, <<"book">>, riakacl_rwaccess).
 %% error
 
 %% We can grant membership of group for limited time.
 %% Note that unix time in microseconds is assumed to use with the library.
 Time = riakacl:unix_time_us(), Before = Time -1, After = Time +1,
-riakacl:update_subject_groups(
+riakacl:put_subject_groups(
   Pid, SubjectBucket, <<"Mark">>,
   [ {<<"a">>, riakacl_group:new_dt(#{exp => Time})} ]),
 riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"book">>, riakacl_rwaccess, Before),
@@ -66,13 +66,20 @@ riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"book">>, riak
 %% error
 
 %% In the same way we can expire ACL entry of the object itself.
-riakacl:update_object_acl(
+riakacl:put_object_acl(
   Pid, ObjectBucket, <<"note">>,
   [ {<<"a">>, riakacl_rwaccess:new_dt(#{read => true}, #{exp => Time})} ]),
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"note">>, riakacl_rwaccess, Before),
 %% {ok,#{read => true,write => false}}
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"note">>, riakacl_rwaccess, After).
 %% error
+
+%% We can get membership back from a subject
+riakacl:remove_subject_groups(Pid, SubjectBucket, <<"John">>, [<<"a">>]).
+%% or an object.
+riakacl:remove_object_acl(Pid, ObjectBucket, <<"book">>, [<<"a">>]).
+%% In this way "John" won't access the "book" anymore.
+riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"book">>, riakacl_rwaccess).
 
 %% Hint: you can always retrieve subject's or object's list of verified groups.
 gb_sets:to_list(

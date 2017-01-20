@@ -28,6 +28,8 @@
 
 %% API
 -export([
+	put_groups/4,
+	remove_groups/4,
 	update_groups/4,
 	find/3,
 	find/4,
@@ -54,18 +56,29 @@
 %% API
 %% =============================================================================
 
--spec update_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> entry().
-update_groups(Pid, Bucket, Key, Groups) ->
+-spec put_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> riakacl_entry:entry().
+put_groups(Pid, Bucket, Key, Groups) ->
+	update_groups(Pid, Bucket, Key, fun(Gs) ->
+		lists:foldl(
+			fun({Name, Group}, Acc) ->
+				riakc_map:update({Name, map}, fun(_) -> Group end, Acc)
+			end, Gs, Groups)
+	end).
+
+-spec remove_groups(pid(), bucket_and_type(), binary(), [binary()]) -> entry().
+remove_groups(Pid, Bucket, Key, Names) ->
+	update_groups(Pid, Bucket, Key, fun(Gs) ->
+		lists:foldl(
+			fun(Name, Acc) ->
+				riakc_map:erase({Name, map}, Acc)
+			end, Gs, Names)
+	end).
+
+-spec update_groups(pid(), bucket_and_type(), binary(), fun((riakacl_group:group()) -> riakacl_group:group())) -> entry().
+update_groups(Pid, Bucket, Key, Handle) ->
 	Now = riakacl:unix_time_us(),
 	E0 = get(Pid, Bucket, Key, [{pr, quorum}], new_dt(Now)),
-	E1 =
-		update_groups_dt(
-			fun(Gs) ->
-				lists:foldl(
-					fun({Name, Group}, Acc) ->
-						riakc_map:update({Name, map}, fun(_) -> Group end, Acc)
-					end, Gs, Groups)
-			end, Now, E0),
+	E1 = update_groups_dt(Handle, Now, E0),
 	put(Pid, Bucket, Key, E1),
 	E1.
 

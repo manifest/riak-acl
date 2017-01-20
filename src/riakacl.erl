@@ -30,8 +30,10 @@
 -export([
 	authorize/7,
 	authorize/6,
-	update_subject_groups/4,
-	update_object_acl/4,
+	put_subject_groups/4,
+	remove_subject_groups/4,
+	put_object_acl/4,
+	remove_object_acl/4,
 	unix_time_us/0,
 	unix_time_us/1
 ]).
@@ -58,13 +60,21 @@ authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time) ->
 		Mod,
 		Time).
 
--spec update_subject_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> riakacl_entry:entry().
-update_subject_groups(Pid, Bucket, Key, Groups) ->
-	riakacl_entry:update_groups(Pid, Bucket, Key, Groups).
+-spec put_subject_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> riakacl_entry:entry().
+put_subject_groups(Pid, Bucket, Key, Groups) ->
+	riakacl_entry:put_groups(Pid, Bucket, Key, Groups).
 
--spec update_object_acl(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> riakacl_entry:entry().
-update_object_acl(Pid, Bucket, Key, Groups) ->
-	riakacl_entry:update_groups(Pid, Bucket, Key, Groups).
+-spec remove_subject_groups(pid(), bucket_and_type(), binary(), [binary()]) -> riakacl_entry:entry().
+remove_subject_groups(Pid, Bucket, Key, Names) ->
+	riakacl_entry:remove_groups(Pid, Bucket, Key, Names).
+
+-spec put_object_acl(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> riakacl_entry:entry().
+put_object_acl(Pid, Bucket, Key, Groups) ->
+	riakacl_entry:put_groups(Pid, Bucket, Key, Groups).
+
+-spec remove_object_acl(pid(), bucket_and_type(), binary(), [binary()]) -> riakacl_entry:entry().
+remove_object_acl(Pid, Bucket, Key, Names) ->
+	riakacl_entry:remove_groups(Pid, Bucket, Key, Names).
 
 -spec unix_time_us() -> non_neg_integer().
 unix_time_us() ->
