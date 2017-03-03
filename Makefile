@@ -7,6 +7,9 @@ DEPS = \
 
 dep_riakc = git https://github.com/basho/riak-erlang-client.git 2.5.0
 
+TEST_DEPS = ct_helper
+dep_ct_helper = git git://github.com/ninenines/ct_helper.git master
+
 SHELL_DEPS = tddreloader
 SHELL_OPTS = \
 	-eval 'application:ensure_all_started($(PROJECT), permanent)' \
