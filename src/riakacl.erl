@@ -30,6 +30,8 @@
 -export([
 	authorize/7,
 	authorize/6,
+	authorize_predefined_object/5,
+	authorize_predefined_object/6,
 	put_subject_groups/4,
 	remove_subject_groups/4,
 	put_object_acl/4,
@@ -39,10 +41,18 @@
 ]).
 
 %% Callbacks
--callback acl(RawDataList) -> ACL
+-callback parse_rawdt(RawData) -> Access
 	when
-		RawDataList :: [[riakacl_group:rawdt()]],
-		ACL         :: any().	
+		RawData :: [riakacl_group:rawdt()],
+		Access  :: any().
+
+-callback max_access(Access, Access) -> Access
+	when
+		Access :: any().
+
+-callback no_access() -> Access
+	when
+		Access :: any().
 
 %% =============================================================================
 %% API
@@ -57,6 +67,18 @@ authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time) ->
 	authorize_(
 		riakacl_entry:find(Pid, Sb, Skey),
 		riakacl_entry:find(Pid, Ob, Okey),
+		Mod,
+		Time).
+
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], module()) -> {ok, any()} | error.
+authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod) ->
+	authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, unix_time_us()).
+
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], module(), non_neg_integer()) -> {ok, any()} | error.
+authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, Time) ->
+	authorize_predefined_object_(
+		riakacl_entry:find(Pid, Sb, Skey),
+		PredefinedObjectGroups,
 		Mod,
 		Time).
 
@@ -96,17 +118,41 @@ authorize_({ok, S}, {ok, O}, Mod, Time) ->
 			riakacl_entry:verified_groupset_dt(O, Time)),
 	case gb_sets:is_empty(Groups) of
 		true -> error;
-		_    -> {ok, Mod:acl(data_rawdt_(O, Groups))}
+		_    -> {ok, max_access_rawdt_(O, Groups, Mod)}
 	end;
 authorize_(_MaybeS, _MaybeO, _Mod, _Time) ->
 	error.
 
--spec data_rawdt_(riakacl_entry:entry(), gb_sets:set(binary())) -> [[riakacl_group:rawdt()]].
-data_rawdt_(E, Groups) ->
-	riakacl_entry:fold_groups_dt(
-		fun(Name, Raw, Acc) ->
-			case gb_sets:is_element(Name, Groups) of
-				true -> [riakacl_group:data_rawdt(Raw)|Acc];
-				_    -> Acc
+-spec authorize_predefined_object_(MaybeEntry, [{binary(), any()}], module(), non_neg_integer()) -> {ok, any()} | error when MaybeEntry :: {ok, riakacl_entry:entry()} | error.
+authorize_predefined_object_({ok, S}, PredefinedObjectGroups, Mod, Time) ->
+	Groups =
+		gb_sets:intersection(
+			riakacl_entry:verified_groupset_dt(S, Time),
+			lists:foldl(fun({Name, _Group}, Acc) -> gb_sets:add_element(Name, Acc) end, gb_sets:new(), PredefinedObjectGroups)),
+	case gb_sets:is_empty(Groups) of
+		true -> error;
+		_    -> {ok, max_access_(PredefinedObjectGroups, Groups, Mod)}
+	end;
+authorize_predefined_object_(_MaybeS, _PredefinedObjectGroups, _Mod, _Time) ->
+	error.
+
+-spec max_access_([{binary(), any()}], gb_sets:set(binary()), module()) -> any().
+max_access_(Groups, Names, Mod) ->
+	lists:foldl(
+		fun({Name, Access}, Max) ->
+			case gb_sets:is_element(Name, Names) of
+				true -> try Mod:max_access(Access, Max) catch _:_ -> Max end;
+				_    -> Max
 			end
-		end, [], E).
+		end, Mod:no_access(), Groups).
+
+-spec max_access_rawdt_(riakacl_entry:entry(), gb_sets:set(binary()), module()) -> any().
+max_access_rawdt_(E, Names, Mod) ->
+	riakacl_entry:fold_groups_dt(
+		fun(Name, Raw, Max) ->
+			case gb_sets:is_element(Name, Names) of
+				true -> try Mod:max_access(Mod:parse_rawdt(riakacl_group:data_rawdt(Raw)), Max) catch _:_ -> Max end;
+				_    -> Max
+			end
+		end, Mod:no_access(), E).
+

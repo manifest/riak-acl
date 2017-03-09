@@ -31,14 +31,14 @@
 	new_dt/1,
 	new_dt/2,
 	access/1,
-	parse_access/1,
-	max_access/2,
-	no_access/0
+	parse_access/1
 ]).
 
 %% ACL callbacks
 -export([
-	acl/1
+	parse_rawdt/1,
+	max_access/2,
+	no_access/0
 ]).
 
 %% Types
@@ -76,6 +76,15 @@ parse_access(<<"-w">>) -> #{read => false, write => true};
 parse_access(<<"rw">>) -> #{read => true, write => true};
 parse_access(<<"--">>) -> #{read => false, write => false}.
 
+%% =============================================================================
+%% ACL callbacks
+%% =============================================================================
+
+-spec parse_rawdt([riakacl_group:rawdt()]) -> any().
+parse_rawdt(Raw) ->
+	{_, Val} = lists:keyfind({<<"access">>, register}, 1, Raw),
+	parse_access(Val).
+
 -spec max_access(access(), access()) -> access().
 max_access(#{read := R1, write := W1}, #{read := R2, write := W2}) ->
 	#{read => max(R1, R2),
@@ -84,17 +93,3 @@ max_access(#{read := R1, write := W1}, #{read := R2, write := W2}) ->
 -spec no_access() -> access().
 no_access() ->
 	#{read => false, write => false}.
-
-%% =============================================================================
-%% ACL callbacks
-%% =============================================================================
-
--spec acl([[riakacl_group:rawdt()]]) -> any().
-acl(L) ->
-	lists:foldl(
-		fun(Raw, Max) ->
-			case lists:keyfind({<<"access">>, register}, 1, Raw) of
-				{_, Val} -> max_access(parse_access(Val), Max);
-				_        -> Max
-			end
-		end, no_access(), L).

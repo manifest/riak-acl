@@ -199,3 +199,15 @@ permission_expired_object(Config) ->
 	riakacl:remove_subject_groups(Pid, ObjBucket, ObjKey, [Group]),
 	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [Group]),
 	true.
+
+predefined_object(Config) ->
+	SubBucket = ?config(subject_bucket, Config),
+	SubKey = riakacl_cth:make_bucket(),
+	Group = riakacl_cth:make_group(),
+	PredefinedObjectGroups = [{Group, #{read => true, write => false}}],
+	Pid = riakacl_cth:riakc_open(Config),
+	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{Group, riakacl_group:new_dt()}]),
+	{ok, #{read := true}} = riakacl:authorize_predefined_object(Pid, SubBucket, SubKey, PredefinedObjectGroups, riakacl_rwaccess),
+	
+	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [Group]),
+	true.
