@@ -32,6 +32,8 @@
 	authorize/6,
 	authorize_predefined_object/5,
 	authorize_predefined_object/6,
+	authorize_predefined_object/7,
+	authorize_predefined_object/8,
 	put_subject_groups/4,
 	remove_subject_groups/4,
 	put_object_acl/4,
@@ -81,6 +83,21 @@ authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, Time) ->
 		PredefinedObjectGroups,
 		Mod,
 		Time).
+
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], module()) -> {ok, any()} | error.
+authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod) ->
+	authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod, unix_time_us()).
+
+%% If a predefined object's group is matched to the subject's group,
+%% the result with the object's access data will be immediately returned.
+%% No future requests to RiakKV will be performed, for perfomance reasons.
+%% So that, predefined ACL cannot be merged with the object's ACL stored in RiakKV.
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], module(), non_neg_integer()) -> {ok, any()} | error.
+authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod, Time) ->
+	case authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, Time) of
+		error -> authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time);
+		OkAcl -> OkAcl
+	end.
 
 -spec put_subject_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> riakacl_entry:entry().
 put_subject_groups(Pid, Bucket, Key, Groups) ->
