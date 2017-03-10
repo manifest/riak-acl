@@ -8,7 +8,7 @@
 	riakc_open/1,
 	await/3,
 	has_group/4,
-	make_bucket/0,
+	make_key/0,
 	make_group/0
 ]).
 
@@ -46,8 +46,8 @@ has_group(Pid, Bucket, Key, Group) ->
 			riakacl_entry:get(Pid, Bucket, Key),
 			riakacl:unix_time_us())).
 
--spec make_bucket() -> binary().
-make_bucket() ->
+-spec make_key() -> binary().
+make_key() ->
 	list_to_binary(vector(128, alphanum_chars())).
 
 -spec make_group() -> binary().

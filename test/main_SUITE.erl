@@ -47,7 +47,7 @@ init_per_suite(Config) ->
 
 subject_group_roundtrip(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	Pid = riakacl_cth:riakc_open(Config),
 	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{Group, riakacl_group:new_dt()}]),
@@ -58,7 +58,7 @@ subject_group_roundtrip(Config) ->
 
 object_group_roundtrip(Config) ->
 	ObjBucket = ?config(object_bucket, Config),
-	ObjKey = riakacl_cth:make_bucket(),
+	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	Pid = riakacl_cth:riakc_open(Config),
 	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{Group, riakacl_rwaccess:new_dt()}]),
@@ -70,8 +70,8 @@ object_group_roundtrip(Config) ->
 permission_1group(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	Pid = riakacl_cth:riakc_open(Config),
 	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{Group, riakacl_group:new_dt()}]),
@@ -85,8 +85,8 @@ permission_1group(Config) ->
 permission_2group_merge(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	GroupReader = riakacl_cth:make_group(),
 	GroupWriter = riakacl_cth:make_group(),
 	GroupNobody = riakacl_cth:make_group(),
@@ -111,8 +111,8 @@ permission_2group_merge(Config) ->
 permission_2group_best(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	GroupReader = riakacl_cth:make_group(),
 	GroupWriter = riakacl_cth:make_group(),
 	GroupNobody = riakacl_cth:make_group(),
@@ -137,8 +137,8 @@ permission_2group_best(Config) ->
 permission_2group_brokenformat(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	GroupReader = riakacl_cth:make_group(),
 	GroupWriter = riakacl_cth:make_group(),
 	GroupNobody = riakacl_cth:make_group(),
@@ -163,8 +163,8 @@ permission_2group_brokenformat(Config) ->
 permission_denied_subject_0group(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	Pid = riakacl_cth:riakc_open(Config),
 	riakacl:put_subject_groups(Pid, SubBucket, SubKey, []),
@@ -178,8 +178,8 @@ permission_denied_subject_0group(Config) ->
 permission_denied_object_0group(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	Pid = riakacl_cth:riakc_open(Config),
 	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{Group, riakacl_group:new_dt()}]),
@@ -193,8 +193,8 @@ permission_denied_object_0group(Config) ->
 permission_expired_subject(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	Time = riakacl:unix_time_us(),
 	After = Time +1,
@@ -211,8 +211,8 @@ permission_expired_subject(Config) ->
 permission_expired_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	Time = riakacl:unix_time_us(),
 	After = Time +1,
@@ -228,7 +228,7 @@ permission_expired_object(Config) ->
 
 predefined_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	PredefinedObjectGroups = [{Group, #{read => true, write => false}}],
 	Pid = riakacl_cth:riakc_open(Config),
@@ -242,8 +242,8 @@ predefined_object(Config) ->
 predefined_object_0group_then_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	PredefinedObjectGroups = [],
 	Pid = riakacl_cth:riakc_open(Config),
@@ -259,8 +259,8 @@ predefined_object_0group_then_object(Config) ->
 predefined_object_1group_then_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	GroupReader = riakacl_cth:make_group(),
 	GroupNobody = riakacl_cth:make_group(),
 	PredefinedObjectGroups = [{GroupNobody, #{read => false, write => false}}],
@@ -277,8 +277,8 @@ predefined_object_1group_then_object(Config) ->
 predefined_object_1group_brokenformat_then_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	GroupReader = riakacl_cth:make_group(),
 	GroupNobody = riakacl_cth:make_group(),
 	PredefinedObjectGroups = [{GroupNobody, #{}}],
@@ -294,7 +294,7 @@ predefined_object_1group_brokenformat_then_object(Config) ->
 
 predefined_subject(Config) ->
 	ObjBucket = ?config(object_bucket, Config),
-	ObjKey = riakacl_cth:make_bucket(),
+	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	PredefinedSubjectGroups = [Group],
 	Pid = riakacl_cth:riakc_open(Config),
@@ -308,8 +308,8 @@ predefined_subject(Config) ->
 predefined_subject_0group_then_subject(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
 	PredefinedSubjectGroups = [],
 	Pid = riakacl_cth:riakc_open(Config),
@@ -325,8 +325,8 @@ predefined_subject_0group_then_subject(Config) ->
 predefined_subject_1group_then_subject(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
-	SubKey = riakacl_cth:make_bucket(),
-	ObjKey = riakacl_cth:make_bucket(),
+	SubKey = riakacl_cth:make_key(),
+	ObjKey = riakacl_cth:make_key(),
 	GroupReader = riakacl_cth:make_group(),
 	GroupNobody = riakacl_cth:make_group(),
 	PredefinedSubjectGroups = [GroupNobody],
