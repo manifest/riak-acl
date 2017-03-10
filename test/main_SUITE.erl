@@ -291,3 +291,51 @@ predefined_object_1group_brokenformat_then_object(Config) ->
 	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [GroupReader]),
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [GroupReader]),
 	true.
+
+predefined_subject(Config) ->
+	ObjBucket = ?config(object_bucket, Config),
+	ObjKey = riakacl_cth:make_bucket(),
+	Group = riakacl_cth:make_group(),
+	PredefinedSubjectGroups = [Group],
+	Pid = riakacl_cth:riakc_open(Config),
+	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{Group, riakacl_rwaccess:new_dt(#{read => true})}]),
+	{ok, #{read := true}} = riakacl:authorize_predefined_subject(Pid, PredefinedSubjectGroups, ObjBucket, ObjKey, riakacl_rwaccess),
+	
+	%% cleaning up
+	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [Group]),
+	true.
+
+predefined_subject_0group_then_subject(Config) ->
+	SubBucket = ?config(subject_bucket, Config),
+	ObjBucket = ?config(object_bucket, Config),
+	SubKey = riakacl_cth:make_bucket(),
+	ObjKey = riakacl_cth:make_bucket(),
+	Group = riakacl_cth:make_group(),
+	PredefinedSubjectGroups = [],
+	Pid = riakacl_cth:riakc_open(Config),
+	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{Group, riakacl_group:new_dt()}]),
+	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{Group, riakacl_rwaccess:new_dt(#{read => true})}]),
+	{ok, #{read := true}} = riakacl:authorize_predefined_subject(Pid, SubBucket, SubKey, PredefinedSubjectGroups, ObjBucket, ObjKey, riakacl_rwaccess),
+
+	%% cleaning up
+	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [Group]),
+	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [Group]),
+	true.
+
+predefined_subject_1group_then_subject(Config) ->
+	SubBucket = ?config(subject_bucket, Config),
+	ObjBucket = ?config(object_bucket, Config),
+	SubKey = riakacl_cth:make_bucket(),
+	ObjKey = riakacl_cth:make_bucket(),
+	GroupReader = riakacl_cth:make_group(),
+	GroupNobody = riakacl_cth:make_group(),
+	PredefinedSubjectGroups = [GroupNobody],
+	Pid = riakacl_cth:riakc_open(Config),
+	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{GroupReader, riakacl_group:new_dt()}]),
+	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{GroupReader, riakacl_rwaccess:new_dt(#{read => true})}]),
+	{ok, #{read := true}} = riakacl:authorize_predefined_subject(Pid, SubBucket, SubKey, PredefinedSubjectGroups, ObjBucket, ObjKey, riakacl_rwaccess),
+
+	%% cleaning up
+	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [GroupReader]),
+	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [GroupReader]),
+	true.

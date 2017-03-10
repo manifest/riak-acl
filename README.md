@@ -31,21 +31,21 @@ ObjectBucket = {<<"riakacl_object_t">>, <<"riakacl-object">>},
 %% Let's allow the group "a" to read it and the group "b" to write to it.
 riakacl:put_object_acl(
   Pid, ObjectBucket, <<"The Book">>,
-  [ {<<"a">>, riakacl_rwaccess:new_dt(#{read => true})},
-    {<<"b">>, riakacl_rwaccess:new_dt(#{write => true})} ]).
+  [ {<<"reader">>, riakacl_rwaccess:new_dt(#{read => true})},
+    {<<"writer">>, riakacl_rwaccess:new_dt(#{write => true})} ]).
 
 %% Let "John" be a member of the "a" group. So that he have access with read permissions.
 riakacl:put_subject_groups(
   Pid, SubjectBucket, <<"John">>,
-  [ {<<"a">>, riakacl_group:new_dt()} ]),
+  [ {<<"reader">>, riakacl_group:new_dt()} ]),
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess).
 %% {ok,#{read => true,write => false}}
 
 %% Sinse "Jack" is a member of both groups, he have access with read and write permissions.
 riakacl:put_subject_groups(
   Pid, SubjectBucket, <<"Jack">>,
-  [ {<<"a">>, riakacl_group:new_dt()},
-    {<<"b">>, riakacl_group:new_dt()} ]),
+  [ {<<"reader">>, riakacl_group:new_dt()},
+    {<<"writer">>, riakacl_group:new_dt()} ]),
 riakacl:authorize(Pid, SubjectBucket, <<"Jack">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess).
 %% {ok,#{read => true,write => true}}
 
@@ -59,7 +59,7 @@ riakacl:authorize(Pid, SubjectBucket, <<"Mery">>, ObjectBucket, <<"The Book">>, 
 Time = riakacl:unix_time_us(), Before = Time -1, After = Time +1,
 riakacl:put_subject_groups(
   Pid, SubjectBucket, <<"Mark">>,
-  [ {<<"a">>, riakacl_group:new_dt(#{exp => Time})} ]),
+  [ {<<"reader">>, riakacl_group:new_dt(#{exp => Time})} ]),
 riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess, Before),
 %% {ok,#{read => true,write => false}}
 riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess, After).
@@ -68,16 +68,39 @@ riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"The Book">>, 
 %% In the same way we can expire ACL entry of the object itself.
 riakacl:put_object_acl(
   Pid, ObjectBucket, <<"The Note">>,
-  [ {<<"a">>, riakacl_rwaccess:new_dt(#{read => true}, #{exp => Time})} ]),
+  [ {<<"reader">>, riakacl_rwaccess:new_dt(#{read => true}, #{exp => Time})} ]),
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Note">>, riakacl_rwaccess, Before),
 %% {ok,#{read => true,write => false}}
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Note">>, riakacl_rwaccess, After).
 %% error
 
+%% We can also specify predefined subject's groups or objects's ACL entries:
+riakacl:authorize_predefined_subject(
+  Pid, [<<"reader">>],
+  ObjectBucket, <<"The Book">>,
+  riakacl_rwaccess).
+%% {ok,#{read => true,write => false}}
+riakacl:authorize_predefined_subject(
+  Pid, SubjectBucket, <<"John">>, [<<"nobody">>],
+	ObjectBucket, <<"The Book">>,
+	riakacl_rwaccess).
+%% {ok,#{read => true,write => false}}
+riakacl:authorize_predefined_object(
+  Pid, SubjectBucket, <<"John">>,
+  [{<<"reader">>, #{read => true, write => false}}],
+  riakacl_rwaccess). 
+%% {ok,#{read => true,write => false}}
+riakacl:authorize_predefined_object(
+  Pid, SubjectBucket, <<"John">>,
+  ObjectBucket, <<"The Book">>, [{<<"nobody">>, #{read => false, write => false}}],
+  riakacl_rwaccess).
+%% {ok,#{read => true,write => false}}
+
+
 %% We can get membership back from a subject
-riakacl:remove_subject_groups(Pid, SubjectBucket, <<"John">>, [<<"a">>]).
+riakacl:remove_subject_groups(Pid, SubjectBucket, <<"John">>, [<<"reader">>]).
 %% or an object.
-riakacl:remove_object_acl(Pid, ObjectBucket, <<"The Book">>, [<<"a">>]).
+riakacl:remove_object_acl(Pid, ObjectBucket, <<"The Book">>, [<<"reader">>]).
 %% In this way "John" won't access the "The Book" anymore.
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess).
 

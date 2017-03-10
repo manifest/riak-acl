@@ -34,6 +34,10 @@
 	authorize_predefined_object/6,
 	authorize_predefined_object/7,
 	authorize_predefined_object/8,
+	authorize_predefined_subject/5,
+	authorize_predefined_subject/6,
+	authorize_predefined_subject/7,
+	authorize_predefined_subject/8,
 	put_subject_groups/4,
 	remove_subject_groups/4,
 	put_object_acl/4,
@@ -99,6 +103,33 @@ authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod
 		OkAcl -> OkAcl
 	end.
 
+-spec authorize_predefined_subject(pid(), [binary()], bucket_and_type(), binary(), module()) -> {ok, any()} | error.
+authorize_predefined_subject(Pid, PredefinedSubjectGroups, Ob, Okey, Mod) ->
+	authorize_predefined_subject(Pid, PredefinedSubjectGroups, Ob, Okey, Mod, unix_time_us()).
+
+-spec authorize_predefined_subject(pid(), [binary()], bucket_and_type(), binary(), module(), non_neg_integer()) -> {ok, any()} | error.
+authorize_predefined_subject(Pid, PredefinedSubjectGroups, Ob, Okey, Mod, Time) ->
+	authorize_predefined_subject_(
+		PredefinedSubjectGroups,
+		riakacl_entry:find(Pid, Ob, Okey),
+		Mod,
+		Time).
+
+-spec authorize_predefined_subject(pid(), bucket_and_type(), binary(), [binary()], bucket_and_type(), binary(), module()) -> {ok, any()} | error.
+authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, Mod) ->
+	authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, Mod, unix_time_us()).
+
+%% If a predefined subject's group is matched to the object's group,
+%% the result with the object's access data will be immediately returned.
+%% No future requests to RiakKV will be performed, for perfomance reasons.
+%% So that, predefined ACL cannot be merged with the object's ACL stored in RiakKV.
+-spec authorize_predefined_subject(pid(), bucket_and_type(), binary(), [binary()], bucket_and_type(), binary(), module(), non_neg_integer()) -> {ok, any()} | error.
+authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, Mod, Time) ->
+	case authorize_predefined_subject(Pid, PredefinedSubjectGroups, Ob, Okey, Mod, Time) of
+		error -> authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time);
+		OkAcl -> OkAcl
+	end.
+
 -spec put_subject_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> riakacl_entry:entry().
 put_subject_groups(Pid, Bucket, Key, Groups) ->
 	riakacl_entry:put_groups(Pid, Bucket, Key, Groups).
@@ -129,28 +160,41 @@ unix_time_us({MS, S, US}) ->
 
 -spec authorize_(MaybeEntry, MaybeEntry, module(), non_neg_integer()) -> {ok, any()} | error when MaybeEntry :: {ok, riakacl_entry:entry()} | error.
 authorize_({ok, S}, {ok, O}, Mod, Time) ->
-	Groups =
+	Names =
 		gb_sets:intersection(
 			riakacl_entry:verified_groupset_dt(S, Time),
 			riakacl_entry:verified_groupset_dt(O, Time)),
-	case gb_sets:is_empty(Groups) of
+	case gb_sets:is_empty(Names) of
 		true -> error;
-		_    -> {ok, max_access_rawdt_(O, Groups, Mod)}
+		_    -> {ok, max_access_rawdt_(O, Names, Mod)}
 	end;
 authorize_(_MaybeS, _MaybeO, _Mod, _Time) ->
 	error.
 
 -spec authorize_predefined_object_(MaybeEntry, [{binary(), any()}], module(), non_neg_integer()) -> {ok, any()} | error when MaybeEntry :: {ok, riakacl_entry:entry()} | error.
 authorize_predefined_object_({ok, S}, PredefinedObjectGroups, Mod, Time) ->
-	Groups =
+	Names =
 		gb_sets:intersection(
 			riakacl_entry:verified_groupset_dt(S, Time),
 			lists:foldl(fun({Name, _Group}, Acc) -> gb_sets:add_element(Name, Acc) end, gb_sets:new(), PredefinedObjectGroups)),
-	case gb_sets:is_empty(Groups) of
+	case gb_sets:is_empty(Names) of
 		true -> error;
-		_    -> {ok, max_access_(PredefinedObjectGroups, Groups, Mod)}
+		_    -> {ok, max_access_(PredefinedObjectGroups, Names, Mod)}
 	end;
 authorize_predefined_object_(_MaybeS, _PredefinedObjectGroups, _Mod, _Time) ->
+	error.
+
+-spec authorize_predefined_subject_([binary()], MaybeEntry, module(), non_neg_integer()) -> {ok, any()} | error when MaybeEntry :: {ok, riakacl_entry:entry()} | error.
+authorize_predefined_subject_(PredefinedSubjectGroups, {ok, O}, Mod, Time) ->
+	Names =
+		gb_sets:intersection(
+			gb_sets:from_list(PredefinedSubjectGroups),
+			riakacl_entry:verified_groupset_dt(O, Time)),
+	case gb_sets:is_empty(Names) of
+		true -> error;
+		_    -> {ok, max_access_rawdt_(O, Names, Mod)}
+	end;
+authorize_predefined_subject_(_PredefinedSubjectGroups, _MaybeO, _Mod, _Time) ->
 	error.
 
 -spec max_access_([{binary(), any()}], gb_sets:set(binary()), module()) -> any().
