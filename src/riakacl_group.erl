@@ -30,16 +30,18 @@
 	new_dt/1,
 	new_dt/2,
 	data_rawdt/1,
-	check_rawdt/2
+	check_rawdt/2,
+	parse_rawdt/2
 ]).
 
 %% Types
--type claims() :: map().
--type data()   :: riakc_map:crdt_map().
--type group()  :: riakc_map:crdt_map().
--type rawdt()  :: {{binary(), riakc_datatype:datatype()}, any()}.
+-type claims()              :: map().
+-type data()                :: riakc_map:crdt_map().
+-type group()               :: riakc_map:crdt_map().
+-type rawdt()               :: {{binary(), riakc_datatype:datatype()}, any()}.
+-type parse_rawdt_handler() :: fun(([riakacl_group:rawdt()], map()) -> map()).
 
--export_type([claims/0, data/0, group/0, rawdt/0]).
+-export_type([claims/0, data/0, group/0, rawdt/0, parse_rawdt_handler/0]).
 
 %% =============================================================================
 %% DataType API
@@ -73,6 +75,10 @@ check_rawdt([{{<<"exp">>, register}, Val}|T], Time) ->
 check_rawdt([_|T], Time) -> check_rawdt(T, Time);
 check_rawdt([], _Time)   -> true.
 
+-spec parse_rawdt([riakacl_group:rawdt()], riakacl_group:parse_rawdt_handler()) -> map().
+parse_rawdt(Raw, HandleData) ->
+	parse_rawdt(Raw, HandleData, #{}).
+
 %% =============================================================================
 %% Internal functions
 %% =============================================================================
@@ -89,3 +95,10 @@ new_dt_(Claims0) ->
 new_dt_([{exp, Val}|T], G) -> new_dt_(T, riakc_map:update({<<"exp">>, register}, fun(Obj) -> riakc_register:set(integer_to_binary(Val), Obj) end, G));
 new_dt_([{iat, Val}|T], G) -> new_dt_(T, riakc_map:update({<<"iat">>, register}, fun(Obj) -> riakc_register:set(integer_to_binary(Val), Obj) end, G));
 new_dt_([], G)             -> G.
+
+-spec parse_rawdt([riakacl_group:rawdt()], riakacl_group:parse_rawdt_handler(), map()) -> map().
+parse_rawdt([{{<<"data">>, map}, L}|T], HandleData, Acc)       -> parse_rawdt(T, HandleData, HandleData(L, Acc));
+parse_rawdt([{{<<"iat">>, register}, Val}|T], HandleData, Acc) -> parse_rawdt(T, HandleData, Acc#{iat => Val});
+parse_rawdt([{{<<"exp">>, register}, Val}|T], HandleData, Acc) -> parse_rawdt(T, HandleData, Acc#{exp => Val});
+parse_rawdt([_|T], HandleData, Acc)                            -> parse_rawdt(T, HandleData, Acc);
+parse_rawdt([], _HandleData, Acc)                              -> Acc.
