@@ -76,11 +76,11 @@ authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time) ->
 		Mod,
 		Time).
 
--spec authorize_predefined_object(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], module()) -> {ok, any()} | error.
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), [{binary(), any()}], module()) -> {ok, any()} | error.
 authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod) ->
 	authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, unix_time_us()).
 
--spec authorize_predefined_object(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], module(), non_neg_integer()) -> {ok, any()} | error.
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), [{binary(), any()}], module(), non_neg_integer()) -> {ok, any()} | error.
 authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, Time) ->
 	authorize_predefined_object_(
 		riakacl_entry:find(Pid, Sb, Skey),
@@ -88,7 +88,7 @@ authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, Time) ->
 		Mod,
 		Time).
 
--spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], module()) -> {ok, any()} | error.
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), any()}], module()) -> {ok, any()} | error.
 authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod) ->
 	authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod, unix_time_us()).
 
@@ -96,7 +96,7 @@ authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod
 %% the result with the object's access data will be immediately returned.
 %% No future requests to RiakKV will be performed, for perfomance reasons.
 %% So that, predefined ACL cannot be merged with the object's ACL stored in RiakKV.
--spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], module(), non_neg_integer()) -> {ok, any()} | error.
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), any()}], module(), non_neg_integer()) -> {ok, any()} | error.
 authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod, Time) ->
 	case authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, Time) of
 		error -> authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time);

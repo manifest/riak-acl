@@ -41,6 +41,9 @@
 	no_access/0
 ]).
 
+%% Definitions
+-define(IS_RWACCESS(A), (A =:= <<"rw">>) or (A =:= <<"r-">>) or (A =:= <<"-w">>) or (A =:= <<"--">>)).
+
 %% Types
 -type access() :: #{read => boolean(), write => boolean()}.
 
@@ -52,17 +55,14 @@
 new_dt() ->
 	new_dt(no_access(), #{}).
 
--spec new_dt(access()) -> riakacl_group:group().
+-spec new_dt(binary() | access()) -> riakacl_group:group().
 new_dt(Access) ->
 	new_dt(Access, #{}).
 
--spec new_dt(access(), riakacl_group:claims()) -> riakacl_group:group().
-new_dt(Access, Claims) ->
-	riakacl_group:new_dt(
-		Claims,
-		fun(Data) ->
-			riakc_map:update({<<"access">>, register}, fun(Obj) -> riakc_register:set(access(Access), Obj) end, Data)
-		end).
+-spec new_dt(binary() | access(), riakacl_group:claims()) -> riakacl_group:group().
+new_dt(Access, Claims) when ?IS_RWACCESS(Access) -> new_dt_(Access, Claims);
+new_dt(Access, Claims) when is_map(Access)       -> new_dt_(access(Access), Claims);
+new_dt(_Access, _Claims)                         -> error(badarg).
 
 -spec access(access()) -> binary().
 access(Val) ->
@@ -93,3 +93,15 @@ max_access(#{read := R1, write := W1}, #{read := R2, write := W2}) ->
 -spec no_access() -> access().
 no_access() ->
 	#{read => false, write => false}.
+
+%% =============================================================================
+%% ACL callbacks
+%% =============================================================================
+
+-spec new_dt_(binary(), riakacl_group:claims()) -> riakacl_group:group().
+new_dt_(Access, Claims) ->
+	riakacl_group:new_dt(
+		Claims,
+		fun(Data) ->
+			riakc_map:update({<<"access">>, register}, fun(Obj) -> riakc_register:set(Access, Obj) end, Data)
+		end).
