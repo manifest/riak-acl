@@ -29,14 +29,17 @@
 %% API
 -export([
 	put_groups/4,
+	put_groups/5,
 	remove_groups/4,
 	update_groups/4,
+	update_groups/5,
 	find/3,
 	find/4,
 	get/3,
 	get/4,
 	get/5,
-	put/4
+	put/4,
+	put/5
 ]).
 
 %% DataType API
@@ -58,12 +61,16 @@
 
 -spec put_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> riakacl_entry:entry().
 put_groups(Pid, Bucket, Key, Groups) ->
+	put_groups(Pid, Bucket, Key, Groups, []).
+
+-spec put_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], [proplists:property()]) -> riakacl_entry:entry().
+put_groups(Pid, Bucket, Key, Groups, Opts) ->
 	update_groups(Pid, Bucket, Key, fun(Gs) ->
 		lists:foldl(
 			fun({Name, Group}, Acc) ->
 				riakc_map:update({Name, map}, fun(_) -> Group end, Acc)
 			end, Gs, Groups)
-	end).
+	end, Opts).
 
 -spec remove_groups(pid(), bucket_and_type(), binary(), [binary()]) -> entry().
 remove_groups(Pid, Bucket, Key, Names) ->
@@ -76,11 +83,14 @@ remove_groups(Pid, Bucket, Key, Names) ->
 
 -spec update_groups(pid(), bucket_and_type(), binary(), fun((riakacl_group:group()) -> riakacl_group:group())) -> entry().
 update_groups(Pid, Bucket, Key, Handle) ->
+	update_groups(Pid, Bucket, Key, Handle, []).
+
+-spec update_groups(pid(), bucket_and_type(), binary(), fun((riakacl_group:group()) -> riakacl_group:group()), [proplists:property()]) -> entry().
+update_groups(Pid, Bucket, Key, Handle, Opts) ->
 	Now = riakacl:unix_time_us(),
 	E0 = get(Pid, Bucket, Key, [{pr, quorum}], new_dt(Now)),
 	E1 = update_groups_dt(Handle, Now, E0),
-	put(Pid, Bucket, Key, E1),
-	E1.
+	put(Pid, Bucket, Key, E1, Opts).
 
 -spec get(pid(), bucket_and_type(), binary()) -> entry().
 get(Pid, Bucket, Key) ->
@@ -114,10 +124,15 @@ find(Pid, Bucket, Key, Opts) ->
 		Else                       -> exit({bad_return_value, Else})
 	end.
 
--spec put(pid(), bucket_and_type(), binary(), entry()) -> ok.
+-spec put(pid(), bucket_and_type(), binary(), entry()) -> entry().
 put(Pid, Bucket, Key, E) ->
-	case catch riakc_pb_socket:update_type(Pid, Bucket, Key, riakc_map:to_op(E), [{pw, quorum}]) of
-		ok                  -> ok;
+	put(Pid, Bucket, Key, E, []).
+
+-spec put(pid(), bucket_and_type(), binary(), entry(), [proplists:property()]) -> entry().
+put(Pid, Bucket, Key, E, Opts) ->
+	case catch riakc_pb_socket:update_type(Pid, Bucket, Key, riakc_map:to_op(E), [{pw, quorum}|Opts]) of
+		ok                  -> E;
+		{ok, Emodified}     -> Emodified;
 		{error, unmodified} -> ok;
 		{error, Reason}     -> exit(Reason);
 		{'EXIT', Reason}    -> exit(Reason);
