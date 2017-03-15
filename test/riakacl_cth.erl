@@ -40,21 +40,18 @@ await(Pid, Bucket, Key) ->
 	ok.
 
 -spec has_group(pid(), bucket_and_type(), binary(), binary()) -> boolean().
-has_group(Pid, Bucket, Key, Group) ->
-	lists:member(
-		Group,
-		riakacl_entry:fold_groups_dt(
-			fun(Name, Raw, Acc) ->
-				[Name|Acc]
-			end, [], riakacl_entry:get(Pid, Bucket, Key))).
+has_group(Pid, Bucket, Key, Name) ->
+	case riakacl_entry:find_group_dt(Name, riakacl_entry:get(Pid, Bucket, Key)) of
+		{ok, _Group} -> true;
+		_            -> false
+	end.
 
 -spec has_verified_group(pid(), bucket_and_type(), binary(), binary()) -> boolean().
-has_verified_group(Pid, Bucket, Key, Group) ->
-	gb_sets:is_member(
-		Group,
-		riakacl_entry:verified_groupset_dt(
-			riakacl_entry:get(Pid, Bucket, Key),
-			riakacl:unix_time_us())).
+has_verified_group(Pid, Bucket, Key, Name) ->
+	case riakacl_entry:find_group_dt(Name, riakacl_entry:get(Pid, Bucket, Key)) of
+		{ok, Group} -> riakacl_group:check_rawdt(Group);
+		_           -> false
+	end.
 
 -spec make_key() -> binary().
 make_key() ->
