@@ -67,6 +67,36 @@ object_group_roundtrip(Config) ->
 	false = riakacl_cth:has_group(Pid, ObjBucket, ObjKey, Group),
 	true.
 
+subject_remove_expired_groups_onupdate(Config) ->
+	SubBucket = ?config(subject_bucket, Config),
+	SubKey = riakacl_cth:make_key(),
+	GroupReader = riakacl_cth:make_group(),
+	GroupWriter = riakacl_cth:make_group(),
+	Pid = riakacl_cth:riakc_open(Config),
+	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{GroupReader, riakacl_group:new_dt(#{exp => riakacl:unix_time_us()})}]),
+	true = riakacl_cth:has_group(Pid, SubBucket, SubKey, GroupReader),
+	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{GroupWriter, riakacl_group:new_dt()}]),
+	false = riakacl_cth:has_group(Pid, SubBucket, SubKey, GroupReader),
+	
+	%% cleaning up
+	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [GroupWriter]),
+	true.
+
+object_remove_expired_groups_onupdate(Config) ->
+	ObjBucket = ?config(object_bucket, Config),
+	ObjKey = riakacl_cth:make_key(),
+	GroupReader = riakacl_cth:make_group(),
+	GroupWriter = riakacl_cth:make_group(),
+	Pid = riakacl_cth:riakc_open(Config),
+	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{GroupReader, riakacl_rwaccess:new_dt(#{read => true}, #{exp => riakacl:unix_time_us()})}]),
+	true = riakacl_cth:has_group(Pid, ObjBucket, ObjKey, GroupReader),
+	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{GroupWriter, riakacl_rwaccess:new_dt(#{read => write})}]),
+	false = riakacl_cth:has_group(Pid, ObjBucket, ObjKey, GroupReader),
+	
+	%% cleaning up
+	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [GroupWriter]),
+	true.
+
 permission_1group(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -78,6 +108,7 @@ permission_1group(Config) ->
 	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{Group, riakacl_rwaccess:new_dt(#{read => true})}]),
 	{ok, #{read := true}} = riakacl:authorize(Pid, SubBucket, SubKey, ObjBucket, ObjKey, riakacl_rwaccess),
 	
+	%% cleaning up
 	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [Group]),
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [Group]),
 	true.

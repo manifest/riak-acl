@@ -8,6 +8,7 @@
 	riakc_open/1,
 	await/3,
 	has_group/4,
+	has_verified_group/4,
 	make_key/0,
 	make_group/0
 ]).
@@ -40,6 +41,15 @@ await(Pid, Bucket, Key) ->
 
 -spec has_group(pid(), bucket_and_type(), binary(), binary()) -> boolean().
 has_group(Pid, Bucket, Key, Group) ->
+	lists:member(
+		Group,
+		riakacl_entry:fold_groups_dt(
+			fun(Name, Raw, Acc) ->
+				[Name|Acc]
+			end, [], riakacl_entry:get(Pid, Bucket, Key))).
+
+-spec has_verified_group(pid(), bucket_and_type(), binary(), binary()) -> boolean().
+has_verified_group(Pid, Bucket, Key, Group) ->
 	gb_sets:is_member(
 		Group,
 		riakacl_entry:verified_groupset_dt(
