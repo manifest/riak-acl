@@ -5,6 +5,38 @@
 Access control list (ACL) on top of Riak KV
 
 
+## Overview
+
+Riak ACL it's an extendable authorization framework. Authorization based on ACL stored in Riak KV.
+An object of authorization is an entity the access is need to be granted.
+An subject of authorization is an entity that is aiming to get an access to the object.
+An ACL entry of the subject contains a list of groups it member of.
+The membership in each group can be limited in time.
+An ACL entry of the object also cantains a list of groups it member of.
+For each of them, access rules and the expiration time are specified.
+
+An subject gets an access to an object only if all three conditions are met:
+- the subject and the object are members of the same group;
+- time of the subject's membership in the group isn't expired;
+- time of the access to the object isn't expired.
+
+*NOTE: expired groups of subjects and objects are removed automatically when it gets updated in RiakKV.*
+
+![riak-acl-groups][riak-acl-groups-img]
+
+Suppose we have an subject that is a member of the groups:
+- A<sub>s+</sub>, access isn't limited in time;
+- B<sub>s1</sub>, access expires at time 1;
+
+And an object that is a member of the groups:
+- A<sub>o2 r-</sub>, access expires at time 2, group members have **read** access;
+- B<sub>o3 -w</sub>, access expires at time 3, group members have **write** access.
+
+For the case on the picture above:
+- At time 0. The subject would have **read** and **write** access to the object, because all three conditions described above are fulfilled for the groups: A and B.
+- At time 1. The subject would have **read** access to the object, because membership of the subject in the group B has been expired.
+- At time 2. The subject would have **no** access to the object, because the time of access to the object has been expired.
+
 
 ### How To Use
 
@@ -120,3 +152,4 @@ The source code is provided under the terms of [the MIT license][license].
 [license]:http://www.opensource.org/licenses/MIT
 [travis]:https://travis-ci.org/manifest/riak-acl?branch=master
 [travis-img]:https://secure.travis-ci.org/manifest/riak-acl.png
+[riak-acl-groups-img]:misc/riak-acl-groups.png
