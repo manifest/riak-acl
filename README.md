@@ -151,5 +151,5 @@ The source code is provided under the terms of [the MIT license][license].
 
 [license]:http://www.opensource.org/licenses/MIT
 [travis]:https://travis-ci.org/manifest/riak-acl?branch=master
-[travis-img]:https://secure.travis-ci.org/manifest/riak-acl.png
+[travis-img]:https://secure.travis-ci.org/manifest/riak-acl.png?branch=master
 [riak-acl-groups-img]:misc/riak-acl-groups.png
