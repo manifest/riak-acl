@@ -46,6 +46,7 @@
 -export([
 	new_dt/1,
 	update_dt/3,
+	group_dt/2,
 	find_group_dt/2,
 	fold_groups_dt/3,
 	verified_groupset_dt/2
@@ -162,6 +163,13 @@ update_groups_dt(HandleGroups, ModifiedAt, E0) ->
 		fun(E1) ->
 			riakc_map:update({<<"groups">>, map}, fun(Gs) -> HandleGroups(cleanup_groups_dt_(Gs, ModifiedAt)) end, E1)
 		end, ModifiedAt, E0).
+
+-spec group_dt(binary(), entry()) -> [riakacl_group:rawdt()].
+group_dt(Name, E) ->
+	case find_group_dt(Name, E) of
+		{ok, Raw} -> Raw;
+		_         -> error({bad_key, Name})
+	end.
 
 -spec find_group_dt(binary(), entry()) -> {ok, [riakacl_group:rawdt()]} | error.
 find_group_dt(Name, E) ->
