@@ -45,6 +45,7 @@ init_per_suite(Config) ->
 %% Tests
 %% =============================================================================
 
+%% Subject's group can be added and removed.
 subject_group_roundtrip(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	SubKey = riakacl_cth:make_key(),
@@ -56,6 +57,7 @@ subject_group_roundtrip(Config) ->
 	false = riakacl_cth:has_group(Pid, SubBucket, SubKey, Group),
 	true.
 
+%% Object's group can be added and removed.
 object_group_roundtrip(Config) ->
 	ObjBucket = ?config(object_bucket, Config),
 	ObjKey = riakacl_cth:make_key(),
@@ -67,6 +69,7 @@ object_group_roundtrip(Config) ->
 	false = riakacl_cth:has_group(Pid, ObjBucket, ObjKey, Group),
 	true.
 
+%% Exprired subject's groups get removed on update.
 subject_remove_expired_groups_onupdate(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	SubKey = riakacl_cth:make_key(),
@@ -82,6 +85,7 @@ subject_remove_expired_groups_onupdate(Config) ->
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [GroupWriter]),
 	true.
 
+%% Exprired objects's groups get removed on update.
 object_remove_expired_groups_onupdate(Config) ->
 	ObjBucket = ?config(object_bucket, Config),
 	ObjKey = riakacl_cth:make_key(),
@@ -97,6 +101,7 @@ object_remove_expired_groups_onupdate(Config) ->
 	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [GroupWriter]),
 	true.
 
+%% The subject gets access to the object, if they both are members of the same group.
 permission_1group(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -113,6 +118,9 @@ permission_1group(Config) ->
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [Group]),
 	true.
 
+%% The subject gets access to the object, if they both are members of the same group.
+%% If more then one group is matched, access rules are merged providing
+%% maximum possible access of all matched groups.
 permission_2group_merge(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -139,6 +147,10 @@ permission_2group_merge(Config) ->
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [GroupReader, GroupWriter, GroupNobody]),
 	true.
 
+%% The subject gets access to the object, if they both are members of the same group.
+%% If more then one group is matched, access rules are merged providing
+%% maximum possible access of all matched groups. The granted access is always
+%% equal or better any matched particular group provides.
 permission_2group_best(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -165,6 +177,7 @@ permission_2group_best(Config) ->
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [GroupReader, GroupWriter, GroupNobody]),
 	true.
 
+%% Groups with broken data format are ignored.
 permission_2group_brokenformat(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -191,6 +204,7 @@ permission_2group_brokenformat(Config) ->
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [GroupReader, GroupWriter, GroupNobody]),
 	true.
 
+%% Access of the subject to the object is denied, if they don't have any groups in common.
 permission_denied_subject_0group(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -206,6 +220,7 @@ permission_denied_subject_0group(Config) ->
 	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [Group]),
 	true.
 
+%% Access of the subject to the object is denied, if they don't have any groups in common.
 permission_denied_object_0group(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -221,6 +236,7 @@ permission_denied_object_0group(Config) ->
 	riakacl:remove_subject_groups(Pid, ObjBucket, ObjKey, [Group]),
 	true.
 
+%% Access of the subject to the object is denied, if subject's access to the matched group is expired.
 permission_expired_subject(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -239,6 +255,8 @@ permission_expired_subject(Config) ->
 	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [Group]),
 	true.
 
+%% Access of the subject to the object is denied, if access provided by object 
+%% for a particular matched group is expired.
 permission_expired_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -257,6 +275,8 @@ permission_expired_object(Config) ->
 	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [Group]),
 	true.
 
+%% The subject gets access to the object, if any of subjects's group
+%% is matched to the predefined object's group.
 predefined_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	SubKey = riakacl_cth:make_key(),
@@ -270,6 +290,8 @@ predefined_object(Config) ->
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [Group]),
 	true.
 
+%% The subject gets access to the object, if there is no predefined object's group.
+%% But the subject and the object are both members of the same group.
 predefined_object_0group_then_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -287,6 +309,9 @@ predefined_object_0group_then_object(Config) ->
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [Group]),
 	true.
 
+%% The subject gets access to the object, if any of subjects's group
+%% isn't matched to the predefined object's group.
+%% But the subject and the object are both members of the same group.
 predefined_object_1group_then_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -305,6 +330,9 @@ predefined_object_1group_then_object(Config) ->
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [GroupReader]),
 	true.
 
+%% The subject gets access to the object, if any of subjects's group
+%% isn't matched to the predefined object's group because of broken format of predefined group.
+%% But the subject and the object are both members of the same group.
 predefined_object_1group_brokenformat_then_object(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -336,6 +364,8 @@ predefined_subject(Config) ->
 	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [Group]),
 	true.
 
+%% The subject gets access to the object, if there is no predefined subject's group.
+%% But the subject and the object are both members of the same group.
 predefined_subject_0group_then_subject(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
@@ -353,6 +383,9 @@ predefined_subject_0group_then_subject(Config) ->
 	riakacl:remove_subject_groups(Pid, SubBucket, SubKey, [Group]),
 	true.
 
+%% The subject gets access to the object, if any of object's group
+%% isn't matched to the predefined subject's group.
+%% But the subject and the object are both members of the same group.
 predefined_subject_1group_then_subject(Config) ->
 	SubBucket = ?config(subject_bucket, Config),
 	ObjBucket = ?config(object_bucket, Config),
