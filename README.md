@@ -20,7 +20,7 @@ An subject gets an access to an object only if all three conditions are met:
 - time of the subject's membership in the group isn't expired;
 - time of the access to the object isn't expired.
 
-*NOTE: expired groups of subjects and objects are removed automatically when it gets updated in RiakKV.*
+*NOTE: expired groups of subject or object are removed automatically when it gets updated in Riak KV.*
 
 ![riak-acl-groups][riak-acl-groups-img]
 
