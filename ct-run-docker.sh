@@ -6,11 +6,12 @@ COMMON_TEST_OPTIONS=${COMMON_TEST_OPTIONS:-''}
 
 function CLEAN() {
 	rm "${DOCKER_EVENT_DONE}" 2>/dev/null \
-		; docker stop ct 2>/dev/null \
-		; docker rm ct 2>/dev/null \
+		; docker stop ${DOCKER_CONTAINER_NAME} 2>/dev/null \
+		; docker rm ${DOCKER_CONTAINER_NAME} 2>/dev/null \
 		; true
 }
 
+set -e
 CLEAN \
 	&& DOCKER_RUN_OPTIONS="-dt --name ${DOCKER_CONTAINER_NAME}" \
 		DOCKER_CONTAINER_COMMAND="touch ${DOCKER_EVENT_DONE} && riak attach" \
@@ -18,4 +19,3 @@ CLEAN \
 	&& while [ ! -f "${DOCKER_EVENT_DONE}" ]; do sleep 3; done \
 	&& make ct ${COMMON_TEST_OPTIONS}
 CLEAN &
-
