@@ -18,12 +18,12 @@
 
 -spec init_config() -> list().
 init_config() ->
-	Env =
-		case os:getenv("DEVELOP_ENVIRONMENT") of
-			false -> error(missing_develop_environment);
-			Val   -> {ok, S, _} = erl_scan:string(Val), {ok, Term} = erl_parse:parse_term(S), Term
-		end,
-	Config = maps:fold(fun(Key, Val, Acc) -> [{Key, Val}|Acc] end, [], Env),
+	Config =
+		try
+			{ok, S, _} = erl_scan:string(os:getenv("DEVELOP_ENVIRONMENT")),
+			{ok, Conf} = erl_parse:parse_term(S),
+			maps:fold(fun(Key, Val, Acc) -> [{Key, Val}|Acc] end, [], Conf)
+		catch _:Reason -> error({missing_develop_environment, ?FUNCTION_NAME, Reason}) end,
 	SubBucket = {<<"riakacl_subject_t">>, <<"riakacl-object">>},
 	ObjBucket = {<<"riakacl_object_t">>, <<"riakacl-object">>},
 	[{subject_bucket, SubBucket}, {object_bucket, ObjBucket} | Config].
