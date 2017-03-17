@@ -6,7 +6,6 @@
 -export([
 	init_config/0,
 	riakc_open/1,
-	await/3,
 	has_group/4,
 	has_verified_group/4,
 	make_key/0,
@@ -19,25 +18,20 @@
 
 -spec init_config() -> list().
 init_config() ->
-	{ok, Config} = file:consult(root_path(<<".develop-environment">>)),
+	Env =
+		case os:getenv("DEVELOP_ENVIRONMENT") of
+			false -> error(missing_develop_environment);
+			Val   -> {ok, S, _} = erl_scan:string(Val), {ok, Term} = erl_parse:parse_term(S), Term
+		end,
+	Config = maps:fold(fun(Key, Val, Acc) -> [{Key, Val}|Acc] end, [], Env),
 	SubBucket = {<<"riakacl_subject_t">>, <<"riakacl-object">>},
 	ObjBucket = {<<"riakacl_object_t">>, <<"riakacl-object">>},
 	[{subject_bucket, SubBucket}, {object_bucket, ObjBucket} | Config].
-
--spec root_path(binary()) -> binary().
-root_path(Path) ->
-	Root = list_to_binary(filename:dirname(filename:join([filename:dirname(code:which(?MODULE))]))),
-	<<Root/binary, $/, Path/binary>>.
 
 riakc_open(Config) ->
 	{_, #{host := Host, port := Port}} = lists:keyfind(kv_protobuf, 1, Config),
 	{ok, Pid} = riakc_pb_socket:start_link(Host, Port),
 	Pid.
-
--spec await(pid(), bucket_and_type(), binary()) -> ok.
-await(Pid, Bucket, Key) ->
-	riakacl_entry:find(Pid, Bucket, Key, [{pr, quorum}]),
-	ok.
 
 -spec has_group(pid(), bucket_and_type(), binary(), binary()) -> boolean().
 has_group(Pid, Bucket, Key, Name) ->

@@ -16,3 +16,5 @@ SHELL_OPTS = \
 	-s tddreloader start
 
 include erlang.mk
+
+export DEVELOP_ENVIRONMENT = $(shell if [ -f .develop-environment ]; then cat .develop-environment; fi)

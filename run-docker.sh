@@ -13,8 +13,11 @@ ULIMIT_FD=262144
 function CREATE_DEVELOP_ENVIRONMENT() {
 	local DOCKER_MACHINE_IP=$(docker-machine ip)
 	local DOCKER_IP=${DOCKER_MACHINE_IP:-'localhost'}
-	printf "{kv_protobuf, #{host => \"%s\", port => %s}}.\n" "${DOCKER_IP}" "${DOCKER_RIAKKV_PROTOBUF_PORT}" > "${DEVELOP_ENVIRONMENT}"
-	printf "{kv_http, #{host => \"%s\", port => %s}}.\n" "${DOCKER_IP}" "${DOCKER_RIAKKV_HTTP_PORT}" >> "${DEVELOP_ENVIRONMENT}"
+	printf \
+		"#{kv_protobuf => #{host => \"%s\", port => %s}, kv_http => #{host => \"%s\", port => %s}}." \
+		"${DOCKER_IP}" "${DOCKER_RIAKKV_PROTOBUF_PORT}" \
+		"${DOCKER_IP}" "${DOCKER_RIAKKV_HTTP_PORT}" \
+		> "${DEVELOP_ENVIRONMENT}"
 }
 
 function PROPS() {
