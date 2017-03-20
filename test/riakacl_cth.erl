@@ -28,6 +28,7 @@ init_config() ->
 	ObjBucket = {<<"riakacl_object_t">>, <<"riakacl-object">>},
 	[{subject_bucket, SubBucket}, {object_bucket, ObjBucket} | Config].
 
+-spec riakc_open(list()) -> pid().
 riakc_open(Config) ->
 	{_, #{host := Host, port := Port}} = lists:keyfind(kv_protobuf, 1, Config),
 	{ok, Pid} = riakc_pb_socket:start_link(Host, Port),
@@ -35,14 +36,14 @@ riakc_open(Config) ->
 
 -spec has_group(pid(), bucket_and_type(), binary(), binary()) -> boolean().
 has_group(Pid, Bucket, Key, Name) ->
-	case riakacl_entry:find_group_dt(Name, riakacl_entry:get(Pid, Bucket, Key)) of
+	case riakacl_entry:find_group_rawdt(Name, riakacl_entry:get(Pid, Bucket, Key)) of
 		{ok, _Group} -> true;
 		_            -> false
 	end.
 
 -spec has_verified_group(pid(), bucket_and_type(), binary(), binary()) -> boolean().
 has_verified_group(Pid, Bucket, Key, Name) ->
-	case riakacl_entry:find_group_dt(Name, riakacl_entry:get(Pid, Bucket, Key)) of
+	case riakacl_entry:find_group_rawdt(Name, riakacl_entry:get(Pid, Bucket, Key)) of
 		{ok, Group} -> riakacl_group:check_rawdt(Group);
 		_           -> false
 	end.
