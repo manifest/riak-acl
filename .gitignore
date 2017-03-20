@@ -26,4 +26,3 @@ erl_crash.dump
 # Project
 .develop-environment
 .docker.event*
-
