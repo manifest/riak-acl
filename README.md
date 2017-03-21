@@ -5,9 +5,32 @@
 Access control list (ACL) on top of Riak KV
 
 
+## Why you might consider to use this library
+
+- Reliability.
+	By default, strict quorum (pr=quorum) of vnodes is required for
+	create or update operations on ACL entries. You would always know if operation is failed.
+- Availability.
+	By default, sloppy quorum of vnodes is used for read operations on ACL entries.
+	You would able to authorize user's requests even when all but one vnode fail.
+- Horizontal scalability.
+	Being based on Riak KV, the number of ACL entries aren't important anymore.
+- High performance.
+	Up to two requests 'by key' are performed for authorize operations.
+- Flexibility.
+	It's possible to limit: time of subject's access to an object or time that object itself
+	is available. Or take access to an object back from a subject any time you need it.
+	It's on your own to choose where to store ACL entries of subjects and objects
+	by specifying bucket names of Riak KV.
+- Extensibility.
+	Custom ACL entries could be used by implementing `riakacl` behavior.
+- Optional support for Solr-based Riak search 2.0.
+	If you need to perform queries through entire ACL data, schemas are available.
+
+
 ## Overview
 
-Riak ACL it's an extendable authorization framework. Authorization based on ACL stored in Riak KV.
+Riak ACL is an extendable authorization framework. Authorization based on ACL stored in Riak KV.
 An object of authorization is an entity the access is need to be granted.
 An subject of authorization is an entity that is aiming to get an access to the object.
 An ACL entry of the subject contains a list of groups it member of.
