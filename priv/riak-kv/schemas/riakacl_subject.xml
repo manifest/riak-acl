@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <schema name="default" version="1.5">
+	<!--
+		- cat: register
+		- mat: register
+		- groups: map
+			- ${GROUP_NAME}: map
+				- iat: register
+				- exp: register
+	-->
 
 	<fields>
-		<!-- Entry fields -->
 		<!-- created_at: int(unix_time(microseconds())) -->
 		<field name="cat_register" type="tint64" indexed="true" stored="false" multiValued="false" />
 		<!-- modified_at: int(unix_time(microseconds())) -->
 		<field name="mat_register" type="tint64" indexed="true" stored="false" multiValued="false" />
-		
-		<!-- Group fields: groups_map.${GROUP_NAME}_map.* -->
 		<!-- issued_at: int(unix_time(microseconds())) -->
 		<dynamicField name="*.iat_register" type="tint64" indexed="false" stored="false" multiValued="false" />
 		<!-- expired_at: int(unix_time(microseconds())) -->
