@@ -30,7 +30,10 @@
 -export([
 	put_groups/4,
 	put_groups/5,
+	put_groups/6,
 	remove_groups/4,
+	remove_groups/5,
+	remove_groups/6,
 	update_groups/4,
 	update_groups/5,
 	find/3,
@@ -46,6 +49,7 @@
 -export([
 	new_dt/1,
 	update_dt/3,
+	update_groups_dt/3,
 	group_rawdt/2,
 	find_group_rawdt/2,
 	fold_groups_dt/3,
@@ -67,21 +71,31 @@ put_groups(Pid, Bucket, Key, Groups) ->
 
 -spec put_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], [proplists:property()]) -> riakacl_entry:entry().
 put_groups(Pid, Bucket, Key, Groups, Opts) ->
-	update_groups(Pid, Bucket, Key, fun(Gs) ->
-		lists:foldl(
-			fun({Name, Group}, Acc) ->
-				riakc_map:update({Name, map}, fun(_) -> Group end, Acc)
-			end, Gs, Groups)
-	end, Opts).
+	update_groups(Pid, Bucket, Key, fun(Gs) -> put_groups_(Groups, Gs) end, Opts).
+
+%% Be careful using this function, in most of the cases you will prefer to pass
+%% to it an entity that has been retrieved using strict quorum (pr = quorum).
+-spec put_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}], riakacl_entry:entry(), [proplists:property()]) -> riakacl_entry:entry().
+put_groups(Pid, Bucket, Key, Groups, E0, Opts) ->
+	Now = riakacl:unix_time_us(),
+	E1 = update_groups_dt(fun(Gs) -> put_groups_(Groups, Gs) end, Now, E0),
+	put(Pid, Bucket, Key, E1, Opts).
 
 -spec remove_groups(pid(), bucket_and_type(), binary(), [binary()]) -> entry().
 remove_groups(Pid, Bucket, Key, Names) ->
-	update_groups(Pid, Bucket, Key, fun(Gs) ->
-		lists:foldl(
-			fun(Name, Acc) ->
-				riakc_map:erase({Name, map}, Acc)
-			end, Gs, Names)
-	end).
+	update_groups(Pid, Bucket, Key, fun(Gs) -> remove_groups_(Names, Gs) end).
+
+-spec remove_groups(pid(), bucket_and_type(), binary(), [binary()], [proplists:property()]) -> entry().
+remove_groups(Pid, Bucket, Key, Names, Opts) ->
+	update_groups(Pid, Bucket, Key, fun(Gs) -> remove_groups_(Names, Gs) end, Opts).
+
+%% Be careful using this function, in most of the cases you will prefer to pass
+%% to it an entity that has been retrieved using strict quorum (pr = quorum).
+-spec remove_groups(pid(), bucket_and_type(), binary(), [binary()], riakacl_entry:entry(), [proplists:property()]) -> entry().
+remove_groups(Pid, Bucket, Key, Names, E0, Opts) ->
+	Now = riakacl:unix_time_us(),
+	E1 = update_groups_dt(fun(Gs) -> remove_groups_(Names, Gs) end, Now, E0),
+	put(Pid, Bucket, Key, E1, Opts).
 
 -spec update_groups(pid(), bucket_and_type(), binary(), fun((riakacl_group:group()) -> riakacl_group:group())) -> entry().
 update_groups(Pid, Bucket, Key, Handle) ->
@@ -205,6 +219,20 @@ verified_groupset_dt(E, Time) ->
 %% =============================================================================
 %% Internal functions
 %% =============================================================================
+
+-spec put_groups_([{binary(), riakacl_group:group()}], riakacl_group:group()) -> riakacl_group:group().
+put_groups_(Groups, Gs) ->
+	lists:foldl(
+		fun({Name, Group}, Acc) ->
+			riakc_map:update({Name, map}, fun(_) -> Group end, Acc)
+		end, Gs, Groups).
+
+-spec remove_groups_([binary()], riakacl_group:group()) -> riakacl_group:group().
+remove_groups_(Names, Gs) ->
+	lists:foldl(
+		fun(Name, Acc) ->
+			riakc_map:erase({Name, map}, Acc)
+		end, Gs, Names).
 
 -spec cleanup_groups_dt_(riakc_map:crdt_map(), non_neg_integer()) -> riakc_map:crdt_map().
 cleanup_groups_dt_(Gs, Time) ->
