@@ -47,6 +47,7 @@
 
 %% DataType API
 -export([
+	new_dt/0,
 	new_dt/1,
 	update_dt/3,
 	update_groups_dt/3,
@@ -158,6 +159,10 @@ put(Pid, Bucket, Key, E, Opts) ->
 %% =============================================================================
 %% DataType API
 %% =============================================================================
+
+-spec new_dt() -> entry().
+new_dt() ->
+	new_dt(riakacl:unix_time_us()).
 
 -spec new_dt(non_neg_integer()) -> entry().
 new_dt(CreatedAt) ->
