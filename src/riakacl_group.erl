@@ -47,6 +47,8 @@
 %% DataType API
 %% =============================================================================
 
+%% It would be slightly more efficient to pass `iat` claim explicitly,
+%% creating many groups by once.
 -spec new_dt() -> group().
 new_dt() ->
 	new_dt_(#{}).

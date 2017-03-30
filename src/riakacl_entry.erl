@@ -160,6 +160,8 @@ put(Pid, Bucket, Key, E, Opts) ->
 %% DataType API
 %% =============================================================================
 
+%% It would be slightly more efficient to use `new_dt/1`,
+%% creating many entries by once.
 -spec new_dt() -> entry().
 new_dt() ->
 	new_dt(riakacl:unix_time_us()).
