@@ -150,7 +150,7 @@ put(Pid, Bucket, Key, E, Opts) ->
 	case catch riakc_pb_socket:update_type(Pid, Bucket, Key, riakc_map:to_op(E), [{pw, quorum}|Opts]) of
 		ok                  -> E;
 		{ok, Emodified}     -> Emodified;
-		{error, unmodified} -> ok;
+		{error, unmodified} -> E;
 		{error, Reason}     -> exit(Reason);
 		{'EXIT', Reason}    -> exit(Reason);
 		Else                -> exit({bad_return_value, Else})
