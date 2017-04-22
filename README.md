@@ -5,7 +5,7 @@
 Access control list (ACL) on top of Riak KV
 
 
-## Why you might consider to use this library
+### Why you might consider to use this library
 
 - Reliability.
 	By default, strict quorum (pr=quorum) of vnodes is required for
@@ -28,7 +28,7 @@ Access control list (ACL) on top of Riak KV
 	If you need to perform queries through entire ACL data, schemas are available.
 
 
-## Overview
+### Overview
 
 Riak ACL is an extendable authorization framework. Authorization based on ACL stored in Riak KV.
 An object of authorization is an entity the access is need to be granted.
