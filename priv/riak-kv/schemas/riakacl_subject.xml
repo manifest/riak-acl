@@ -15,7 +15,7 @@
 		<!-- modified_at: int(unix_time(microseconds())) -->
 		<field name="mat_register" type="tint64" indexed="true" stored="false" multiValued="false" />
 		<!-- issued_at: int(unix_time(microseconds())) -->
-		<dynamicField name="*.iat_register" type="tint64" indexed="false" stored="false" multiValued="false" />
+		<dynamicField name="*.iat_register" type="tint64" indexed="true" stored="false" multiValued="false" />
 		<!-- expired_at: int(unix_time(microseconds())) -->
 		<dynamicField name="*.exp_register" type="tint64" indexed="false" stored="false" multiValued="false" />
 
