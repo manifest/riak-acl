@@ -206,10 +206,11 @@ permission_denied_subject_0group(Config) ->
 	SubKey = riakacl_cth:make_key(),
 	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
+	NoAccess = riakacl_rwaccess:no_access(),
 	Pid = riakacl_cth:riakc_open(Config),
 	riakacl:put_subject_groups(Pid, SubBucket, SubKey, []),
 	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{Group, riakacl_rwaccess:new_dt()}]),
-	error = riakacl:authorize(Pid, SubBucket, SubKey, ObjBucket, ObjKey, riakacl_rwaccess),
+	{ok, NoAccess} = riakacl:authorize(Pid, SubBucket, SubKey, ObjBucket, ObjKey, riakacl_rwaccess),
 
 	%% cleaning up
 	riakacl:remove_object_acl(Pid, ObjBucket, ObjKey, [Group]).
@@ -221,10 +222,11 @@ permission_denied_object_0group(Config) ->
 	SubKey = riakacl_cth:make_key(),
 	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
+	NoAccess = riakacl_rwaccess:no_access(),
 	Pid = riakacl_cth:riakc_open(Config),
 	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{Group, riakacl_group:new_dt()}]),
 	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, []),
-	error = riakacl:authorize(Pid, SubBucket, SubKey, ObjBucket, ObjKey, riakacl_rwaccess),
+	{ok, NoAccess} = riakacl:authorize(Pid, SubBucket, SubKey, ObjBucket, ObjKey, riakacl_rwaccess),
 
 	%% cleaning up
 	riakacl:remove_subject_groups(Pid, ObjBucket, ObjKey, [Group]).
@@ -236,12 +238,13 @@ permission_expired_subject(Config) ->
 	SubKey = riakacl_cth:make_key(),
 	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
+	NoAccess = riakacl_rwaccess:no_access(),
 	Time = riakacl:unix_time_us(),
 	After = Time +1,
 	Pid = riakacl_cth:riakc_open(Config),
 	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{Group, riakacl_group:new_dt(#{exp => Time})}]),
 	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{Group, riakacl_rwaccess:new_dt()}]),
-	error = riakacl:authorize(Pid, SubBucket, SubKey, ObjBucket, ObjKey, riakacl_rwaccess, After),
+	{ok, NoAccess} = riakacl:authorize(Pid, SubBucket, SubKey, ObjBucket, ObjKey, riakacl_rwaccess, After),
 
 	%% cleaning up
 	riakacl:remove_subject_groups(Pid, ObjBucket, ObjKey, [Group]),
@@ -255,12 +258,13 @@ permission_expired_object(Config) ->
 	SubKey = riakacl_cth:make_key(),
 	ObjKey = riakacl_cth:make_key(),
 	Group = riakacl_cth:make_group(),
+	NoAccess = riakacl_rwaccess:no_access(),
 	Time = riakacl:unix_time_us(),
 	After = Time +1,
 	Pid = riakacl_cth:riakc_open(Config),
 	riakacl:put_subject_groups(Pid, SubBucket, SubKey, [{Group, riakacl_group:new_dt()}]),
 	riakacl:put_object_acl(Pid, ObjBucket, ObjKey, [{Group, riakacl_rwaccess:new_dt(#{read => true}, #{exp => Time})}]),
-	error = riakacl:authorize(Pid, SubBucket, SubKey, ObjBucket, ObjKey, riakacl_rwaccess, After),
+	{ok, NoAccess} = riakacl:authorize(Pid, SubBucket, SubKey, ObjBucket, ObjKey, riakacl_rwaccess, After),
 
 	%% cleaning up
 	riakacl:remove_subject_groups(Pid, ObjBucket, ObjKey, [Group]),

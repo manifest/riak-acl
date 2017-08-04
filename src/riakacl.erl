@@ -98,9 +98,10 @@ authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod
 %% So that, predefined ACL cannot be merged with the object's ACL stored in RiakKV.
 -spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), any()}], module(), non_neg_integer()) -> {ok, any()} | error.
 authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod, Time) ->
+	NoAccess = Mod:no_access(),
 	case authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, Time) of
-		error -> authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time);
-		OkAcl -> OkAcl
+		{ok, NoAccess} -> authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time);
+		MaybeAcl       -> MaybeAcl
 	end.
 
 -spec authorize_predefined_subject(pid(), [binary()], bucket_and_type(), binary(), module()) -> {ok, any()} | error.
@@ -125,9 +126,10 @@ authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, M
 %% So that, predefined ACL cannot be merged with the object's ACL stored in RiakKV.
 -spec authorize_predefined_subject(pid(), bucket_and_type(), binary(), [binary()], bucket_and_type(), binary(), module(), non_neg_integer()) -> {ok, any()} | error.
 authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, Mod, Time) ->
+	NoAccess = Mod:no_access(),
 	case authorize_predefined_subject(Pid, PredefinedSubjectGroups, Ob, Okey, Mod, Time) of
-		error -> authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time);
-		OkAcl -> OkAcl
+		{ok, NoAccess} -> authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time);
+		MaybeAcl       -> MaybeAcl
 	end.
 
 -spec put_subject_groups(pid(), bucket_and_type(), binary(), [{binary(), riakacl_group:group()}]) -> riakacl_entry:entry().
@@ -165,7 +167,7 @@ authorize_({ok, S}, {ok, O}, Mod, Time) ->
 			riakacl_entry:verified_groupset_dt(S, Time),
 			riakacl_entry:verified_groupset_dt(O, Time)),
 	case gb_sets:is_empty(Names) of
-		true -> error;
+		true -> {ok, Mod:no_access()};
 		_    -> {ok, max_access_rawdt_(O, Names, Mod)}
 	end;
 authorize_(_MaybeS, _MaybeO, _Mod, _Time) ->
@@ -178,7 +180,7 @@ authorize_predefined_object_({ok, S}, PredefinedObjectGroups, Mod, Time) ->
 			riakacl_entry:verified_groupset_dt(S, Time),
 			lists:foldl(fun({Name, _Group}, Acc) -> gb_sets:add_element(Name, Acc) end, gb_sets:new(), PredefinedObjectGroups)),
 	case gb_sets:is_empty(Names) of
-		true -> error;
+		true -> {ok, Mod:no_access()};
 		_    -> {ok, max_access_(PredefinedObjectGroups, Names, Mod)}
 	end;
 authorize_predefined_object_(_MaybeS, _PredefinedObjectGroups, _Mod, _Time) ->
@@ -191,7 +193,7 @@ authorize_predefined_subject_(PredefinedSubjectGroups, {ok, O}, Mod, Time) ->
 			gb_sets:from_list(PredefinedSubjectGroups),
 			riakacl_entry:verified_groupset_dt(O, Time)),
 	case gb_sets:is_empty(Names) of
-		true -> error;
+		true -> {ok, Mod:no_access()};
 		_    -> {ok, max_access_rawdt_(O, Names, Mod)}
 	end;
 authorize_predefined_subject_(_PredefinedSubjectGroups, _MaybeO, _Mod, _Time) ->
@@ -216,4 +218,3 @@ max_access_rawdt_(E, Names, Mod) ->
 				_    -> Max
 			end
 		end, Mod:no_access(), E).
-

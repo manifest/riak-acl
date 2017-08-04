@@ -107,7 +107,7 @@ riakacl:authorize(Pid, SubjectBucket, <<"Jack">>, ObjectBucket, <<"The Book">>, 
 %% Mery isn't a member of any group. Access to "The Book" is forbidden for her.
 riakacl:put_subject_groups(Pid, SubjectBucket, <<"Mery">>, []),
 riakacl:authorize(Pid, SubjectBucket, <<"Mery">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess).
-%% error
+%% {ok,#{read => false,write => false}}
 
 %% We can grant membership of group for limited time.
 %% Note that unix time in microseconds is assumed to use with the library.
@@ -118,7 +118,7 @@ riakacl:put_subject_groups(
 riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess, Before),
 %% {ok,#{read => true,write => false}}
 riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess, After).
-%% error
+%% {ok,#{read => false,write => false}}
 
 %% In the same way we can expire ACL entry of the object itself.
 riakacl:put_object_acl(
@@ -127,7 +127,7 @@ riakacl:put_object_acl(
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Note">>, riakacl_rwaccess, Before),
 %% {ok,#{read => true,write => false}}
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Note">>, riakacl_rwaccess, After).
-%% error
+%% {ok,#{read => false,write => false}}
 
 %% We can also specify predefined subject's groups or objects's ACL entries:
 riakacl:authorize_predefined_subject(
