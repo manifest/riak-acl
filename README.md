@@ -159,6 +159,14 @@ riakacl:remove_object_acl(Pid, ObjectBucket, <<"The Book">>, [<<"reader">>]).
 %% In this way "John" won't access the "The Book" anymore.
 riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess).
 
+%% We get an error when trying to retrieve a non-existent ACL of subject
+riakacl:authorize(Pid, SubjectBucket, <<"Foo">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess).
+%% {error,bad_aclsubject_key}
+%% Or object
+riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"Bar">>, riakacl_rwaccess).
+%% {error,bad_aclobject_key}
+
+
 %% Hint: you can always retrieve subject's or object's list of verified groups.
 gb_sets:to_list(
   riakacl_entry:verified_groupset_dt(
