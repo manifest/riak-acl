@@ -28,16 +28,19 @@
 
 %% API
 -export([
-	authorize/7,
 	authorize/6,
+	authorize/7,
+	authorize/8,
 	authorize_predefined_object/5,
 	authorize_predefined_object/6,
 	authorize_predefined_object/7,
 	authorize_predefined_object/8,
+	authorize_predefined_object/9,
 	authorize_predefined_subject/5,
 	authorize_predefined_subject/6,
 	authorize_predefined_subject/7,
 	authorize_predefined_subject/8,
+	authorize_predefined_subject/9,
 	put_subject_groups/4,
 	remove_subject_groups/4,
 	put_object_acl/4,
@@ -66,13 +69,18 @@
 
 -spec authorize(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), module()) -> {ok | error, any()}.
 authorize(Pid, Sb, Skey, Ob, Okey, Mod) ->
-	authorize(Pid, Sb, Skey, Ob, Okey, Mod, unix_time_us()).
+	authorize(Pid, Sb, Skey, Ob, Okey, [], Mod).
 
--spec authorize(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), module(), non_neg_integer()) -> {ok | error, any()}.
-authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time) ->
+-spec authorize(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [binary()], module()) -> {ok | error, any()}.
+authorize(Pid, Sb, Skey, Ob, Okey, DerivedSubjectGroups, Mod) ->
+	authorize(Pid, Sb, Skey, Ob, Okey, DerivedSubjectGroups, Mod, unix_time_us()).
+
+-spec authorize(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [binary()], module(), non_neg_integer()) -> {ok | error, any()}.
+authorize(Pid, Sb, Skey, Ob, Okey, DerivedSubjectGroups, Mod, Time) ->
 	authorize_(
 		riakacl_entry:find(Pid, Sb, Skey),
 		riakacl_entry:find(Pid, Ob, Okey),
+		DerivedSubjectGroups,
 		Mod,
 		Time).
 
@@ -90,17 +98,22 @@ authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, Time) ->
 
 -spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), any()}], module()) -> {ok | error, any()}.
 authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod) ->
-	authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod, unix_time_us()).
+	authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, [], Mod).
 
-%% If a predefined object's group is matched to the subject's group,
-%% the result with the object's access data will be immediately returned.
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), any()}], [binary()], module()) -> {ok | error, any()}.
+authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, DerivedSubjectGroups, Mod) ->
+	authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, DerivedSubjectGroups, Mod, unix_time_us()).
+
+%% If a predefined object's group is matched to subject's group,
+%% the result with object's access data will be immediately returned.
 %% No future requests to RiakKV will be performed, for perfomance reasons.
-%% So that, predefined ACL cannot be merged with the object's ACL stored in RiakKV.
--spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), any()}], module(), non_neg_integer()) -> {ok | error, any()}.
-authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, Mod, Time) ->
+%% So that, predefined ACL cannot be merged with object's ACL stored in RiakKV.
+%% Derived subject's groups are processed similar as general subject's groups.
+-spec authorize_predefined_object(pid(), bucket_and_type(), binary(), bucket_and_type(), binary(), [{binary(), any()}], [binary()], module(), non_neg_integer()) -> {ok | error, any()}.
+authorize_predefined_object(Pid, Sb, Skey, Ob, Okey, PredefinedObjectGroups, DerivedSubjectGroups, Mod, Time) ->
 	NoAccess = Mod:no_access(),
 	case authorize_predefined_object(Pid, Sb, Skey, PredefinedObjectGroups, Mod, Time) of
-		{ok, NoAccess} -> authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time);
+		{ok, NoAccess} -> authorize(Pid, Sb, Skey, Ob, Okey, DerivedSubjectGroups, Mod, Time);
 		MaybeAcl       -> MaybeAcl
 	end.
 
@@ -118,17 +131,22 @@ authorize_predefined_subject(Pid, PredefinedSubjectGroups, Ob, Okey, Mod, Time) 
 
 -spec authorize_predefined_subject(pid(), bucket_and_type(), binary(), [binary()], bucket_and_type(), binary(), module()) -> {ok | error, any()}.
 authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, Mod) ->
-	authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, Mod, unix_time_us()).
+	authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, [], Mod, unix_time_us()).
 
-%% If a predefined subject's group is matched to the object's group,
-%% the result with the object's access data will be immediately returned.
+-spec authorize_predefined_subject(pid(), bucket_and_type(), binary(), [binary()], bucket_and_type(), binary(), [binary()], module()) -> {ok | error, any()}.
+authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, DerivedSubjectGroups, Mod) ->
+	authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, DerivedSubjectGroups, Mod, unix_time_us()).
+
+%% If a predefined subject's group is matched to object's group,
+%% the result with object's access data will be immediately returned.
 %% No future requests to RiakKV will be performed, for perfomance reasons.
-%% So that, predefined ACL cannot be merged with the object's ACL stored in RiakKV.
--spec authorize_predefined_subject(pid(), bucket_and_type(), binary(), [binary()], bucket_and_type(), binary(), module(), non_neg_integer()) -> {ok | error, any()}.
-authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, Mod, Time) ->
+%% So that, predefined ACL cannot be merged with object's ACL stored in RiakKV.
+%% Derived subject's groups are processed similar as general subject's groups.
+-spec authorize_predefined_subject(pid(), bucket_and_type(), binary(), [binary()], bucket_and_type(), binary(), [binary()], module(), non_neg_integer()) -> {ok | error, any()}.
+authorize_predefined_subject(Pid, Sb, Skey, PredefinedSubjectGroups, Ob, Okey, DerivedSubjectGroups, Mod, Time) ->
 	NoAccess = Mod:no_access(),
 	case authorize_predefined_subject(Pid, PredefinedSubjectGroups, Ob, Okey, Mod, Time) of
-		{ok, NoAccess} -> authorize(Pid, Sb, Skey, Ob, Okey, Mod, Time);
+		{ok, NoAccess} -> authorize(Pid, Sb, Skey, Ob, Okey, DerivedSubjectGroups, Mod, Time);
 		MaybeAcl       -> MaybeAcl
 	end.
 
@@ -160,19 +178,19 @@ unix_time_us({MS, S, US}) ->
 %% Internal functions
 %% =============================================================================
 
--spec authorize_(MaybeEntry, MaybeEntry, module(), non_neg_integer()) -> {ok | error, any()} when MaybeEntry :: {ok, riakacl_entry:entry()} | error.
-authorize_({ok, S}, {ok, O}, Mod, Time) ->
+-spec authorize_(MaybeEntry, MaybeEntry, [binary()], module(), non_neg_integer()) -> {ok | error, any()} when MaybeEntry :: {ok, riakacl_entry:entry()} | error.
+authorize_({ok, S}, {ok, O}, DerivedSubjectGroups, Mod, Time) ->
 	Names =
 		gb_sets:intersection(
-			riakacl_entry:verified_groupset_dt(S, Time),
+			gb_sets:union(riakacl_entry:verified_groupset_dt(S, Time), gb_sets:from_list(DerivedSubjectGroups)),
 			riakacl_entry:verified_groupset_dt(O, Time)),
 	case gb_sets:is_empty(Names) of
 		true -> {ok, Mod:no_access()};
 		_    -> {ok, max_access_rawdt_(O, Names, Mod)}
 	end;
-authorize_(error, _MaybeO, _Mod, _Time) ->
+authorize_(error, _MaybeO, _DerivedSubjectGroups, _Mod, _Time) ->
 	{error, bad_aclsubject_key};
-authorize_(_MaybeS, error, _Mod, _Time) ->
+authorize_(_MaybeS, error, _DerivedSubjectGroups, _Mod, _Time) ->
 	{error, bad_aclobject_key}.
 
 -spec authorize_predefined_object_(MaybeEntry, [{binary(), any()}], module(), non_neg_integer()) -> {ok | error, any()} when MaybeEntry :: {ok, riakacl_entry:entry()} | error.

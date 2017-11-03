@@ -77,10 +77,15 @@ to demonstrate how you can manage access of subjects to objects.
 Note that you can also create your own ACL modules by implementing `riakacl` behaviour.
 
 ```erlang
-%% Specifying buckets and opening a connection.
+%% Initializing a connection to Riak KV.
+{ok, S, _} = erl_scan:string(os:getenv("DEVELOP_ENVIRONMENT")),
+{ok, Conf} = erl_parse:parse_term(S),
+#{kv_protobuf := #{host := Host, port := Port}} = Conf,
+{ok, Pid} = riakc_pb_socket:start_link(Host, Port).
+
+%% Specifying buckets
 SubjectBucket = {<<"riakacl_subject_t">>, <<"riakacl-object">>},
-ObjectBucket = {<<"riakacl_object_t">>, <<"riakacl-object">>},
-{ok, Pid} = riakc_pb_socket:start_link("192.168.99.100", 8087).
+ObjectBucket = {<<"riakacl_object_t">>, <<"riakacl-object">>}.
 
 %% Suppose we have "The Book" and want to restrict access.
 %% Let's allow the group "a" to read it and the group "b" to write to it.
@@ -115,18 +120,18 @@ Time = riakacl:unix_time_us(), Before = Time -1, After = Time +1,
 riakacl:put_subject_groups(
   Pid, SubjectBucket, <<"Mark">>,
   [ {<<"reader">>, riakacl_group:new_dt(#{exp => Time})} ]),
-riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess, Before),
+riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"The Book">>, [], riakacl_rwaccess, Before),
 %% {ok,#{read => true,write => false}}
-riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"The Book">>, riakacl_rwaccess, After).
+riakacl:authorize(Pid, SubjectBucket, <<"Mark">>, ObjectBucket, <<"The Book">>, [], riakacl_rwaccess, After).
 %% {ok,#{read => false,write => false}}
 
 %% In the same way we can expire ACL entry of the object itself.
 riakacl:put_object_acl(
   Pid, ObjectBucket, <<"The Note">>,
   [ {<<"reader">>, riakacl_rwaccess:new_dt(#{read => true}, #{exp => Time})} ]),
-riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Note">>, riakacl_rwaccess, Before),
+riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Note">>, [], riakacl_rwaccess, Before),
 %% {ok,#{read => true,write => false}}
-riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Note">>, riakacl_rwaccess, After).
+riakacl:authorize(Pid, SubjectBucket, <<"John">>, ObjectBucket, <<"The Note">>, [], riakacl_rwaccess, After).
 %% {ok,#{read => false,write => false}}
 
 %% We can also specify predefined subject's groups or objects's ACL entries:
@@ -137,8 +142,8 @@ riakacl:authorize_predefined_subject(
 %% {ok,#{read => true,write => false}}
 riakacl:authorize_predefined_subject(
   Pid, SubjectBucket, <<"John">>, [<<"nobody">>],
-	ObjectBucket, <<"The Book">>,
-	riakacl_rwaccess).
+  ObjectBucket, <<"The Book">>,
+  riakacl_rwaccess).
 %% {ok,#{read => true,write => false}}
 riakacl:authorize_predefined_object(
   Pid, SubjectBucket, <<"John">>,
@@ -148,6 +153,21 @@ riakacl:authorize_predefined_object(
 riakacl:authorize_predefined_object(
   Pid, SubjectBucket, <<"John">>,
   ObjectBucket, <<"The Book">>, [{<<"nobody">>, #{read => false, write => false}}],
+  riakacl_rwaccess).
+%% {ok,#{read => true,write => false}}
+
+
+%% We could also explicitly add group membership to a subject, just for one-time operation
+riakacl:authorize_predefined_object(
+  Pid, SubjectBucket, <<"Mery">>,
+  ObjectBucket, <<"The Book">>, [],
+  [<<"reader">>],
+  riakacl_rwaccess).
+%% {ok,#{read => true,write => false}}
+riakacl:authorize_predefined_subject(
+  Pid, SubjectBucket, <<"Mery">>, [],
+  ObjectBucket, <<"The Book">>,
+  [<<"reader">>],
   riakacl_rwaccess).
 %% {ok,#{read => true,write => false}}
 
